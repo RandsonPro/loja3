@@ -1,15 +1,49 @@
-<h2>Usuários Cadastrados</h2>
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Nome</th>
-    <th>Email</th>
-  </tr>
-  {% for usuario in usuarios %}
-  <tr>
-    <td>{{ usuario.id }}</td>
-    <td>{{ usuario.nome }}</td>
-    <td>{{ usuario.email }}</td>
-  </tr>
-  {% endfor %}
+{% extends "base.html" %}
+
+{% block title %}Usuários Cadastrados - Grupo Vix{% endblock %}
+
+{% block content %}
+<h4 class="mb-4 text-center">Usuários do Sistema</h4>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="mb-3 text-end">
+    <a href="{{ url_for('cadastrar_usuario') }}" class="btn btn-success">
+        ➕ Cadastrar Novo Usuário
+    </a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Tipo</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario.nome }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.tipo }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('excluir_usuario', id=usuario.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
+{% endblock %}

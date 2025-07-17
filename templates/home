@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Grupo Vix - Home{% endblock %}
+{% block content %}
+
+<h2 class="text-center mt-4">🛍️ Buscar Produtos e Adicionar ao Pedido</h2>
+
+<div class="container mb-3">
+    <input type="text" id="produto-input" class="form-control"
+        placeholder="🔍 Digite o nome do produto..." oninput="filtrarProdutos()">
+</div>
+
+<div class="container" id="tabela-produtos" style="display: none;">
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Nome</th>
+                <th>Preço</th>
+                <th>Estoque</th>
+                <th>Adicionar</th>
+            </tr>
+        </thead>
+        <tbody id="lista-produtos">
+            {% for produto in produtos %}
+            <tr class="produto-item">
+                <td>{{ produto.nome }}</td>
+                <td>R$ {{ produto.preco }}</td>
+                <td id="estoque_{{ produto.id }}">{{ produto.estoque }}</td>
+                <td>
+                    <input type="number" id="quantidade_{{ produto.id }}" class="form-control" min="1" max="{{ produto.estoque }}" value="1">
+                    <button class="btn btn-primary btn-sm mt-2"
+                        onclick="adicionarAoPedido('{{ produto.id }}', '{{ produto.nome | escape }}', parseFloat('{{ produto.preco }}'), document.getElementById('quantidade_{{ produto.id }}').value)">
+                        ➕ Adicionar
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- 📋 Exibição do Pedido -->
+<div class="container mt-4 bg-light p-3 rounded">
+    <h4>📋 Pedido Atual</h4>
+
+    <div id="lista-pedido" class="d-flex flex-wrap gap-2"></div>
+
+    <div class="text-center mt-3 p-3 bg-success text-white rounded shadow-lg">
+        <h3><strong>Total: R$ <span id="total">0.00</span></strong></h3>
+    </div>
+</div>
+
+<!-- 💳 Formulário de Finalização -->
+<form action="{{ url_for('processar_venda') }}" method="POST" onsubmit="return validarPagamento()">
+    <input type="hidden" name="pedido" id="pedido-input">
+    <input type="hidden" name="forma_pagamento" id="forma-pagamento">
+
+    <!-- 🧾 Venda Fiado -->
+    <div class="form-check mt-3">
+        <input class="form-check-input" type="checkbox" name="fiado" id="fiado-checkbox" onchange="toggleClienteObrigatorio()">
+        <label class="form-check-label" for="fiado-checkbox">
+            🧾 Venda Fiado (cliente pagará depois)
+        </label>
+    </div>
+
+    <!-- 👤 Selecionar Cliente -->
+    <div class="mt-3">
+        <label for="cliente_id"><strong>👤 Cliente:</strong></label>
+        <select name="cliente_id" id="cliente_id" class="form-select">
+            <option value="">Selecione um cliente</option>
+            {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- 💸 Forma de Pagamento -->
+    <label class="mt-4"><strong>Forma de Pagamento:</strong></label>
+    <div class="btn-group d-flex justify-content-center" role="group">
+        <button type="button" class="btn btn-outline-primary" onclick="selecionarPagamento('Dinheiro', this)">
+            💵 Dinheiro
+        </button>
+        <button type="button" class="btn btn-outline-success" onclick="selecionarPagamento('Cartão', this)">
+            💳 Cartão
+        </button>
+        <button type="button" class="btn btn-outline-warning" onclick="selecionarPagamento('PIX', this)">
+            ⚡ PIX
+        </button>
+    </div>
+
+    <div id="erro-pagamento" class="text-danger mt-2" style="display: none;">
+        ⚠️ Selecione uma forma de pagamento antes de finalizar a compra!
+    </div>
+
+    <button type="submit" class="btn btn-success mt-4 w-100">💳 Finalizar Compra</button>
+</form>
+
+{% if ultimo_pedido %}
+<div class="container bg-light p-3 mt-4 rounded">
+    <h4>📜 Último Pedido</h4>
+    <ul class="list-group">
+        {% for item in ultimo_pedido.produtos %}
+            <li class="list-group-item">{{ item.nome }} - {{ item.quantidade }}x R$ {{ item.preco }}</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Forma de Pagamento:</strong> {{ ultimo_pedido.forma_pagamento }}</p>
+    <p><strong>Fiado:</strong> {{ 'Sim' if ultimo_pedido.fiado else 'Não' }}</p>
+    <p><strong>Cliente:</strong> {{ ultimo_pedido.cliente.nome if ultimo_pedido.cliente else 'N/A' }}</p>
+    <a href="{{ url_for('cupom', id=ultimo_pedido.id) }}" class="btn btn-info">🔎 Ver Cupom Completo</a>
+</div>
+{% endif %}
+
+<script>
+    function toggleClienteObrigatorio() {
+        const check = document.getElementById("fiado-checkbox");
+        const cliente = document.getElementById("cliente_id");
+        cliente.required = check.checked;
+    }
+</script>
+<script src="{{ url_for('static', filename='script.js') }}" defer></script>
+
+{% endblock %}
